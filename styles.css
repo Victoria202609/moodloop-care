@@ -56,7 +56,7 @@ body[data-tone="tired"] .ambient-one { background: rgba(190, 190, 216, .48); }
   padding-top: 24px;
 }
 .header-actions { display: flex; align-items: center; gap: 8px; }
-.header-nav { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 99px; padding: 8px 12px; color: #65697b; background: rgba(255,255,255,.62); cursor: pointer; font-size: 12px; backdrop-filter: blur(12px); }
+.header-nav { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 99px; padding: 8px 12px; color: #65697b; background: rgba(255,255,255,.62); cursor: pointer; font-size: 12px; text-decoration: none; backdrop-filter: blur(12px); }
 .header-nav:hover { color: var(--primary-dark); border-color: #c5c0e4; background: rgba(255,255,255,.9); }
 .header-nav svg { width: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -256,6 +256,7 @@ body.modal-open { overflow: hidden; }
 .page-heading p { margin: 0; color: var(--muted); font-size: 13px; }
 .page-actions { display: flex; align-items: center; gap: 12px; }
 .page-actions .text-button { white-space: nowrap; }
+.home-link { text-decoration: none; }
 .care-summary { display: flex; align-items: center; gap: 18px; margin-bottom: 14px; padding: 17px 20px; border: 1px solid rgba(102,89,200,.13); border-radius: 17px; color: #67627f; background: rgba(238,235,255,.58); }
 .care-summary > div { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
 .care-summary span { padding: 6px 9px; border-radius: 99px; color: white; background: var(--primary); font-size: 11px; }

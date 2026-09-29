@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f6f7fb" />
   <meta name="description" content="MoodLoop 情绪回路：用 30 秒看见情绪，找到让当下好 1% 的行动。" />
   <title>MoodLoop · 情绪回路</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260929-3" />
 </head>
 <body>
   <div class="ambient ambient-one"></div>
@@ -19,6 +19,10 @@
       <span class="brand-cn">情绪回路</span>
     </a>
     <div class="header-actions">
+      <a class="header-nav home-nav" href="./" aria-label="回到首页">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9H6v-9m4 9v-6h4v6"/></svg>
+        首页
+      </a>
       <button id="toolkit-nav" class="header-nav" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8m0-12.8L5.6 18.4"/></svg>
         关怀工具
@@ -163,7 +167,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
             返回分析
           </button>
-          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+          <a class="text-button home-link" href="./">回到首页</a>
         </div>
       </div>
 
@@ -220,7 +224,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
             返回上一页
           </button>
-          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+          <a class="text-button home-link" href="./">回到首页</a>
         </div>
       </div>
       <div id="demo-data-note" class="demo-data-note">当前展示的是示例洞察；完成一次调节后，将切换为你的真实记录。</div>
@@ -257,7 +261,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
             返回上一页
           </button>
-          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+          <a class="text-button home-link" href="./">回到首页</a>
         </div>
       </div>
       <div class="tool-grid">
@@ -393,6 +397,6 @@
     </section>
   </div>
 
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260929-3"></script>
 </body>
 </html>
