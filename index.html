@@ -18,9 +18,15 @@
       <span>MoodLoop</span>
       <span class="brand-cn">情绪回路</span>
     </a>
-    <div class="privacy-pill" title="记录只保存在当前浏览器">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.9 8.1 7 10 4.1-1.9 7-5.3 7-10V6l-7-3Zm0 3.1 4 1.7V11c0 3.1-1.7 5.5-4 7-2.3-1.5-4-3.9-4-7V7.8l4-1.7Z"/></svg>
-      本地隐私模式
+    <div class="header-actions">
+      <button id="footprints-nav" class="header-nav" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
+        我的足迹
+      </button>
+      <div class="privacy-pill" title="记录只保存在当前浏览器">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.9 8.1 7 10 4.1-1.9 7-5.3 7-10V6l-7-3Zm0 3.1 4 1.7V11c0 3.1-1.7 5.5-4 7-2.3-1.5-4-3.9-4-7V7.8l4-1.7Z"/></svg>
+        本地隐私模式
+      </div>
     </div>
   </header>
 
@@ -139,6 +145,40 @@
       </div>
     </section>
 
+    <section id="footprints" class="footprints-section" hidden>
+      <div class="page-heading">
+        <div>
+          <span class="step-label">04 · 我的足迹</span>
+          <h2>你正在慢慢读懂自己</h2>
+          <p>不是为了给情绪打分，而是看见什么真正对你有帮助。</p>
+        </div>
+        <button id="back-from-footprints" class="back-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+          回到此刻
+        </button>
+      </div>
+      <div id="demo-data-note" class="demo-data-note">当前展示的是示例洞察；完成一次调节后，将切换为你的真实记录。</div>
+      <div class="insight-grid">
+        <article class="stat-card"><small>已照顾自己</small><strong><span id="stat-count">0</span><i>次</i></strong><p>每一次停下来都算数</p></article>
+        <article class="stat-card accent-stat"><small>平均缓解</small><strong><span id="stat-relief">0</span><i>分</i></strong><p>调节前后的情绪变化</p></article>
+        <article class="stat-card"><small>最近常见触发</small><strong id="stat-trigger" class="text-stat">—</strong><p>了解规律，不等于定义自己</p></article>
+      </div>
+      <div class="insight-layout">
+        <article class="chart-card">
+          <div class="section-title"><div><small>最近 7 天</small><h3>情绪强度趋势</h3></div><span class="chart-legend"><i></i> 调节后</span></div>
+          <div id="mood-chart" class="mood-chart" aria-label="最近七天情绪强度图"></div>
+        </article>
+        <article class="trigger-card">
+          <div class="section-title"><div><small>了解自己</small><h3>触发因素</h3></div></div>
+          <div id="trigger-list" class="trigger-list"></div>
+        </article>
+      </div>
+      <article class="recent-card">
+        <div class="section-title"><div><small>温柔回看</small><h3>最近记录</h3></div><button id="clear-records" class="text-button" type="button">清除我的数据</button></div>
+        <div id="recent-list" class="recent-list"></div>
+      </article>
+    </section>
+
     <p class="medical-note">MoodLoop 提供自我关怀支持，不提供心理诊断或医疗建议。若你正处于危险中，请立即联系身边可信任的人或当地紧急援助。</p>
   </main>
 
@@ -190,6 +230,24 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="safety-modal" class="modal" role="alertdialog" aria-modal="true" aria-labelledby="safety-title" hidden>
+    <div class="modal-backdrop"></div>
+    <section class="safety-panel">
+      <div class="safety-symbol">✦</div>
+      <span class="step-label">此刻，安全最重要</span>
+      <h2 id="safety-title">请不要独自承受这一刻</h2>
+      <p>我留意到你可能正经历非常艰难的时刻。MoodLoop 无法替代紧急或专业支持，请现在联系一位可以陪伴你的人。</p>
+      <div class="safety-steps">
+        <div><b>1</b><span>先远离可能伤害自己的物品或地点</span></div>
+        <div><b>2</b><span>联系可信任的人，请对方陪在你身边</span></div>
+        <div><b>3</b><span>如有立即危险，联系当地紧急服务或前往最近急诊</span></div>
+      </div>
+      <button id="copy-support-message" class="primary-button" type="button">复制一条求助消息</button>
+      <button id="close-safety" class="quiet-button" type="button">我现在安全，返回记录</button>
+      <small class="safety-disclaimer">求助不是添麻烦，而是在保护一个重要的人——你自己。</small>
+    </section>
+  </div>
 
   <script src="./app.js"></script>
 </body>

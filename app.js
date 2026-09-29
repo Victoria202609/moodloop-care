@@ -16,6 +16,7 @@ const analyzeButton = document.querySelector("#analyze-button");
 const resultSection = document.querySelector("#result");
 const heroSection = document.querySelector(".hero");
 const checkinCard = document.querySelector(".checkin-card");
+const footprintsSection = document.querySelector("#footprints");
 const practiceModal = document.querySelector("#practice-modal");
 const practiceStage = document.querySelector("#practice-stage");
 const afterStage = document.querySelector("#after-stage");
@@ -24,6 +25,14 @@ const afterIntensity = document.querySelector("#after-intensity");
 const afterValue = document.querySelector("#after-value");
 let activeAnalysis = null;
 let breathingTimer = null;
+
+const riskWords = ["不想活", "想死", "自杀", "自残", "伤害自己", "结束生命", "活不下去"];
+const demoRecords = [
+  { emotion: "焦虑", intensityBefore: 8, intensityAfter: 5, note: "临时收到汇报任务，担心准备不充分", trigger: "时间与任务压力", createdAt: new Date(Date.now() - 86400000 * 6).toISOString() },
+  { emotion: "疲惫", intensityBefore: 7, intensityAfter: 6, note: "连续加班后很难集中注意力", trigger: "身体与能量", createdAt: new Date(Date.now() - 86400000 * 4).toISOString() },
+  { emotion: "低落", intensityBefore: 6, intensityAfter: 4, note: "发出的消息很久没有收到回复", trigger: "社交关系", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+  { emotion: "焦虑", intensityBefore: 7, intensityAfter: 4, note: "明天要汇报，担心被否定", trigger: "自我评价", createdAt: new Date(Date.now() - 86400000).toISOString() },
+];
 
 const patterns = [
   {
@@ -197,6 +206,11 @@ function renderAnalysis() {
     return;
   }
 
+  if (riskWords.some((word) => text.includes(word))) {
+    openSafetySupport();
+    return;
+  }
+
   const pattern = findPattern(text);
   const action = pattern.action[state.minutes];
   activeAnalysis = {
@@ -219,16 +233,93 @@ function renderAnalysis() {
 
   heroSection.hidden = true;
   checkinCard.hidden = true;
+  footprintsSection.hidden = true;
   resultSection.hidden = false;
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 analyzeButton.addEventListener("click", renderAnalysis);
 document.querySelector("#back-to-checkin").addEventListener("click", () => {
-  resultSection.hidden = true;
-  heroSection.hidden = false;
-  checkinCard.hidden = false;
+  showPage("checkin");
+});
+
+function showPage(page) {
+  const isCheckin = page === "checkin";
+  heroSection.hidden = !isCheckin;
+  checkinCard.hidden = !isCheckin;
+  resultSection.hidden = page !== "result";
+  footprintsSection.hidden = page !== "footprints";
+  if (page === "footprints") renderFootprints();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function getRecords() {
+  try {
+    const records = JSON.parse(localStorage.getItem("moodloop_records") || "[]");
+    return Array.isArray(records) ? records : [];
+  } catch {
+    return [];
+  }
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+}
+
+function renderFootprints() {
+  const saved = getRecords();
+  const usingDemo = saved.length === 0;
+  const records = usingDemo ? demoRecords : saved;
+  document.querySelector("#demo-data-note").hidden = !usingDemo;
+  document.querySelector("#clear-records").hidden = usingDemo;
+  document.querySelector("#stat-count").textContent = records.length;
+  const relief = records.reduce((sum, record) => sum + Math.max(0, record.intensityBefore - record.intensityAfter), 0) / records.length;
+  document.querySelector("#stat-relief").textContent = (relief || 0).toFixed(1).replace(".0", "");
+
+  const triggerCounts = records.reduce((counts, record) => {
+    counts[record.trigger] = (counts[record.trigger] || 0) + 1;
+    return counts;
+  }, {});
+  const sortedTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]);
+  document.querySelector("#stat-trigger").textContent = sortedTriggers[0]?.[0] || "继续记录中";
+
+  const dayNames = ["日", "一", "二", "三", "四", "五", "六"];
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - (6 - index));
+    const sameDay = records.filter((record) => new Date(record.createdAt).toDateString() === date.toDateString());
+    const value = sameDay.length ? Math.round(sameDay.reduce((sum, record) => sum + record.intensityAfter, 0) / sameDay.length) : 0;
+    return { label: `周${dayNames[date.getDay()]}`, value };
+  });
+  document.querySelector("#mood-chart").innerHTML = days.map((day) => `
+    <div class="chart-day"><b>${day.value || "·"}</b><i class="chart-bar" style="height:${day.value ? Math.max(10, day.value * 12) : 6}px;opacity:${day.value ? 1 : .18}"></i><small>${day.label}</small></div>
+  `).join("");
+
+  const maxTrigger = sortedTriggers[0]?.[1] || 1;
+  document.querySelector("#trigger-list").innerHTML = sortedTriggers.slice(0, 4).map(([label, count]) => `
+    <div class="trigger-item"><span>${label}</span><b>${count} 次</b><div class="trigger-track"><i style="width:${(count / maxTrigger) * 100}%"></i></div></div>
+  `).join("");
+
+  const emotionMarks = { 开心: "晴", 平静: "静", 焦虑: "虑", 低落: "雨", 愤怒: "火", 疲惫: "倦" };
+  document.querySelector("#recent-list").innerHTML = records.slice(0, 4).map((record) => {
+    const date = new Date(record.createdAt);
+    const change = Math.max(0, record.intensityBefore - record.intensityAfter);
+    return `<div class="recent-item"><div class="recent-emotion">${emotionMarks[record.emotion] || "记"}</div><div class="recent-copy"><strong>${escapeHtml(record.note)}</strong><small>${date.getMonth() + 1}月${date.getDate()}日 · ${record.trigger}</small></div><span class="relief-chip">${change ? `缓解 ${change} 分` : "已记录"}</span></div>`;
+  }).join("");
+}
+
+document.querySelector("#footprints-nav").addEventListener("click", () => showPage("footprints"));
+document.querySelector("#back-from-footprints").addEventListener("click", () => showPage("checkin"));
+document.querySelector(".brand").addEventListener("click", (event) => {
+  event.preventDefault();
+  showPage("checkin");
+});
+document.querySelector("#clear-records").addEventListener("click", () => {
+  if (!window.confirm("确定清除当前设备上的全部情绪记录吗？此操作无法撤销。")) return;
+  localStorage.removeItem("moodloop_records");
+  renderFootprints();
+  showToast("本地记录已清除");
 });
 
 function showToast(message) {
@@ -237,6 +328,29 @@ function showToast(message) {
   toast.classList.add("show");
   window.setTimeout(() => toast.classList.remove("show"), 2200);
 }
+
+function openSafetySupport() {
+  document.querySelector("#safety-modal").hidden = false;
+  document.body.classList.add("modal-open");
+  document.querySelector("#copy-support-message").focus();
+}
+
+function closeSafetySupport() {
+  document.querySelector("#safety-modal").hidden = true;
+  document.body.classList.remove("modal-open");
+  journal.focus();
+}
+
+document.querySelector("#close-safety").addEventListener("click", closeSafetySupport);
+document.querySelector("#copy-support-message").addEventListener("click", async () => {
+  const message = "我现在状态很不好，需要有人陪我一下。你可以尽快联系我吗？";
+  try {
+    await navigator.clipboard.writeText(message);
+    showToast("求助消息已复制，请发送给可信任的人");
+  } catch {
+    window.prompt("请复制这条消息并发送给可信任的人：", message);
+  }
+});
 
 function resetPractice() {
   if (breathingTimer) window.clearInterval(breathingTimer);
@@ -333,7 +447,7 @@ function saveCheckin() {
     intensityAfter: after,
     createdAt: new Date().toISOString(),
   };
-  const existing = JSON.parse(localStorage.getItem("moodloop_records") || "[]");
+  const existing = getRecords();
   localStorage.setItem("moodloop_records", JSON.stringify([record, ...existing].slice(0, 30)));
 
   const change = activeAnalysis.intensityBefore - after;
