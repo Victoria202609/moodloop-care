@@ -17,16 +17,42 @@ const resultSection = document.querySelector("#result");
 const heroSection = document.querySelector(".hero");
 const checkinCard = document.querySelector(".checkin-card");
 const footprintsSection = document.querySelector("#footprints");
+const toolkitSection = document.querySelector("#toolkit");
 const practiceModal = document.querySelector("#practice-modal");
+const actionStage = document.querySelector("#action-stage");
 const practiceStage = document.querySelector("#practice-stage");
+const groundingStage = document.querySelector("#grounding-stage");
+const movementStage = document.querySelector("#movement-stage");
+const soundStage = document.querySelector("#sound-stage");
 const afterStage = document.querySelector("#after-stage");
 const completeStage = document.querySelector("#complete-stage");
 const afterIntensity = document.querySelector("#after-intensity");
 const afterValue = document.querySelector("#after-value");
 let activeAnalysis = null;
 let breathingTimer = null;
+let actionTimer = null;
+let audioContext = null;
+let soundSource = null;
+let soundGain = null;
+let currentIntervention = "";
+let currentPage = "checkin";
+let returnPage = "checkin";
+let completionMode = "record";
+let movementIndex = 0;
+let clearConfirmTimer = null;
 
 const riskWords = ["不想活", "想死", "自杀", "自残", "伤害自己", "结束生命", "活不下去"];
+const toolMeta = {
+  breathing: { label: "节律呼吸", short: "试试一分钟呼吸" },
+  grounding: { label: "感官着陆", short: "试试感官着陆" },
+  movement: { label: "身体松动", short: "试试身体松动" },
+  sound: { label: "舒缓声景", short: "听一会舒缓声景" },
+};
+const movementSteps = [
+  { visual: "↟", title: "耸肩，再慢慢放下", copy: "吸气时耸起肩膀，呼气时彻底放松，重复三次。" },
+  { visual: "↔", title: "轻轻转动肩膀", copy: "向后缓慢绕肩五次，再换一个方向，不追求幅度。" },
+  { visual: "⌁", title: "伸展手臂与背部", copy: "双手向前延伸，背部轻轻展开，保持三个自然呼吸。" },
+];
 const demoRecords = [
   { emotion: "焦虑", intensityBefore: 8, intensityAfter: 5, note: "临时收到汇报任务，担心准备不充分", trigger: "时间与任务压力", createdAt: new Date(Date.now() - 86400000 * 6).toISOString() },
   { emotion: "疲惫", intensityBefore: 7, intensityAfter: 6, note: "连续加班后很难集中注意力", trigger: "身体与能量", createdAt: new Date(Date.now() - 86400000 * 4).toISOString() },
@@ -213,7 +239,11 @@ function renderAnalysis() {
 
   const pattern = findPattern(text);
   const action = pattern.action[state.minutes];
+  const recommendedTool = state.intensity >= 8
+    ? "breathing"
+    : ({ 焦虑: "breathing", 愤怒: "grounding", 疲惫: "movement", 低落: "sound", 平静: "grounding", 开心: "sound" }[state.emotion] || "breathing");
   activeAnalysis = {
+    id: `mood-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     emotion: state.emotion,
     intensityBefore: state.intensity,
     note: text,
@@ -221,6 +251,9 @@ function renderAnalysis() {
     need: pattern.need,
     actionTitle: action[0],
     minutes: state.minutes,
+    recommendedTool,
+    feedback: null,
+    saved: false,
   };
   document.querySelector("#result-badge").textContent = `${state.emotion} · ${state.intensity}/10`;
   document.querySelector("#compassion-text").textContent = emotionCopy[state.emotion];
@@ -230,12 +263,15 @@ function renderAnalysis() {
   document.querySelector("#action-time").textContent = `${state.minutes} 分钟`;
   document.querySelector("#action-title").textContent = action[0];
   document.querySelector("#action-description").textContent = action[1];
+  document.querySelector("#recommended-tool-label").textContent = toolMeta[recommendedTool].short;
+  document.querySelector("#start-practice").disabled = false;
+  document.querySelector("#start-practice").textContent = "现在开始";
+  document.querySelectorAll("[data-feedback]").forEach((button) => {
+    button.classList.remove("selected");
+    button.setAttribute("aria-pressed", "false");
+  });
 
-  heroSection.hidden = true;
-  checkinCard.hidden = true;
-  footprintsSection.hidden = true;
-  resultSection.hidden = false;
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showPage("result");
 }
 
 analyzeButton.addEventListener("click", renderAnalysis);
@@ -244,11 +280,14 @@ document.querySelector("#back-to-checkin").addEventListener("click", () => {
 });
 
 function showPage(page) {
+  if ((page === "footprints" || page === "toolkit") && page !== currentPage) returnPage = currentPage;
   const isCheckin = page === "checkin";
   heroSection.hidden = !isCheckin;
   checkinCard.hidden = !isCheckin;
   resultSection.hidden = page !== "result";
   footprintsSection.hidden = page !== "footprints";
+  toolkitSection.hidden = page !== "toolkit";
+  currentPage = page;
   if (page === "footprints") renderFootprints();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -268,13 +307,14 @@ function escapeHtml(value) {
 
 function renderFootprints() {
   const saved = getRecords();
-  const usingDemo = saved.length === 0;
+  const usingDemo = saved.length === 0 && localStorage.getItem("moodloop_demo_dismissed") !== "true";
   const records = usingDemo ? demoRecords : saved;
   document.querySelector("#demo-data-note").hidden = !usingDemo;
-  document.querySelector("#clear-records").hidden = usingDemo;
+  document.querySelector("#clear-records").hidden = saved.length === 0;
   document.querySelector("#stat-count").textContent = records.length;
-  const relief = records.reduce((sum, record) => sum + Math.max(0, record.intensityBefore - record.intensityAfter), 0) / records.length;
-  document.querySelector("#stat-relief").textContent = (relief || 0).toFixed(1).replace(".0", "");
+  const relief = records.length ? records.reduce((sum, record) => sum + (record.intensityBefore - record.intensityAfter), 0) / records.length : 0;
+  const reliefText = relief > 0 ? `+${relief.toFixed(1).replace(".0", "")}` : relief.toFixed(1).replace(".0", "");
+  document.querySelector("#stat-relief").textContent = reliefText;
 
   const triggerCounts = records.reduce((counts, record) => {
     counts[record.trigger] = (counts[record.trigger] || 0) + 1;
@@ -297,29 +337,46 @@ function renderFootprints() {
   `).join("");
 
   const maxTrigger = sortedTriggers[0]?.[1] || 1;
-  document.querySelector("#trigger-list").innerHTML = sortedTriggers.slice(0, 4).map(([label, count]) => `
+  document.querySelector("#trigger-list").innerHTML = sortedTriggers.length ? sortedTriggers.slice(0, 4).map(([label, count]) => `
     <div class="trigger-item"><span>${label}</span><b>${count} 次</b><div class="trigger-track"><i style="width:${(count / maxTrigger) * 100}%"></i></div></div>
-  `).join("");
+  `).join("") : '<p class="empty-copy">完成一次情绪照顾后，这里会出现你的触发规律。</p>';
 
   const emotionMarks = { 开心: "晴", 平静: "静", 焦虑: "虑", 低落: "雨", 愤怒: "火", 疲惫: "倦" };
-  document.querySelector("#recent-list").innerHTML = records.slice(0, 4).map((record) => {
+  document.querySelector("#recent-list").innerHTML = records.length ? records.slice(0, 4).map((record) => {
     const date = new Date(record.createdAt);
-    const change = Math.max(0, record.intensityBefore - record.intensityAfter);
-    return `<div class="recent-item"><div class="recent-emotion">${emotionMarks[record.emotion] || "记"}</div><div class="recent-copy"><strong>${escapeHtml(record.note)}</strong><small>${date.getMonth() + 1}月${date.getDate()}日 · ${record.trigger}</small></div><span class="relief-chip">${change ? `缓解 ${change} 分` : "已记录"}</span></div>`;
-  }).join("");
+    const change = record.intensityBefore - record.intensityAfter;
+    const changeText = change > 0 ? `缓解 ${change} 分` : change < 0 ? `上升 ${Math.abs(change)} 分` : "没有变化";
+    const method = record.skipped ? "跳过练习" : (record.intervention || record.actionTitle || "完成记录");
+    return `<div class="recent-item"><div class="recent-emotion">${emotionMarks[record.emotion] || "记"}</div><div class="recent-copy"><strong>${escapeHtml(record.note)}</strong><small>${date.getMonth() + 1}月${date.getDate()}日 · ${record.trigger} · ${escapeHtml(method)}</small></div><span class="relief-chip">${changeText}</span></div>`;
+  }).join("") : '<div class="empty-records"><b>还没有真实记录</b><span>从一次 30 秒情绪记录开始，慢慢积累属于你的规律。</span></div>';
 }
 
 document.querySelector("#footprints-nav").addEventListener("click", () => showPage("footprints"));
-document.querySelector("#back-from-footprints").addEventListener("click", () => showPage("checkin"));
+document.querySelector("#toolkit-nav").addEventListener("click", () => showPage("toolkit"));
+document.querySelector("#back-from-footprints").addEventListener("click", () => showPage(returnPage === "footprints" ? "checkin" : returnPage));
+document.querySelector("#back-from-toolkit").addEventListener("click", () => showPage(returnPage === "toolkit" ? "checkin" : returnPage));
 document.querySelector(".brand").addEventListener("click", (event) => {
   event.preventDefault();
   showPage("checkin");
 });
 document.querySelector("#clear-records").addEventListener("click", () => {
-  if (!window.confirm("确定清除当前设备上的全部情绪记录吗？此操作无法撤销。")) return;
+  const button = document.querySelector("#clear-records");
+  if (button.dataset.confirming !== "true") {
+    button.dataset.confirming = "true";
+    button.textContent = "再次点击确认清除";
+    clearTimeout(clearConfirmTimer);
+    clearConfirmTimer = window.setTimeout(() => {
+      button.dataset.confirming = "false";
+      button.textContent = "清除我的数据";
+    }, 3500);
+    return;
+  }
   localStorage.removeItem("moodloop_records");
+  localStorage.setItem("moodloop_demo_dismissed", "true");
+  button.dataset.confirming = "false";
+  button.textContent = "清除我的数据";
   renderFootprints();
-  showToast("本地记录已清除");
+  showToast("本地记录已清除，不会重新填充示例");
 });
 
 function showToast(message) {
@@ -352,12 +409,38 @@ document.querySelector("#copy-support-message").addEventListener("click", async 
   }
 });
 
+const modalStages = [actionStage, practiceStage, groundingStage, movementStage, soundStage, afterStage, completeStage];
+
+function formatTime(seconds) {
+  return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function showModalStage(stage) {
+  modalStages.forEach((item) => { item.hidden = item !== stage; });
+}
+
+function stopSound() {
+  if (soundSource) {
+    try { soundSource.stop(); } catch {}
+    soundSource = null;
+  }
+  if (audioContext) {
+    audioContext.close().catch(() => {});
+    audioContext = null;
+  }
+  soundGain = null;
+  document.querySelector("#sound-orb").classList.remove("playing");
+  document.querySelector("#sound-status").textContent = "点击播放";
+  document.querySelector("#toggle-sound").textContent = "播放舒缓声景";
+}
+
 function resetPractice() {
   if (breathingTimer) window.clearInterval(breathingTimer);
+  if (actionTimer) window.clearInterval(actionTimer);
   breathingTimer = null;
-  practiceStage.hidden = false;
-  afterStage.hidden = true;
-  completeStage.hidden = true;
+  actionTimer = null;
+  stopSound();
+  showModalStage(actionStage);
   document.querySelector("#begin-breathing").disabled = false;
   document.querySelector("#begin-breathing").textContent = "开始呼吸练习";
   document.querySelector("#breathing-phase").textContent = "准备";
@@ -366,34 +449,106 @@ function resetPractice() {
   document.querySelector("#practice-progress").style.width = "0";
   document.querySelector("#cycle-text").textContent = "准备开始";
   document.querySelector("#timer-text").textContent = "01:00";
+  document.querySelector("#begin-action").disabled = false;
+  document.querySelector("#begin-action").textContent = "开始行动计时";
+  document.querySelector("#action-progress").style.width = "0";
+  document.querySelectorAll(".grounding-list button").forEach((button) => button.classList.remove("done"));
+  document.querySelector("#finish-grounding").disabled = true;
+  document.querySelector("#finish-grounding").textContent = "完成全部观察";
+  movementIndex = 0;
+  renderMovementStep();
+  document.querySelector("#save-checkin").disabled = false;
 }
 
 function openPractice() {
-  if (!activeAnalysis) return;
+  if (!activeAnalysis || activeAnalysis.saved) {
+    showToast("本次记录已经保存，可以开始一次新的记录");
+    return;
+  }
   resetPractice();
+  completionMode = "record";
+  currentIntervention = "1% 行动";
+  document.querySelector("#modal-action-title").textContent = activeAnalysis.actionTitle;
+  document.querySelector("#modal-action-description").textContent = document.querySelector("#action-description").textContent;
+  document.querySelector("#action-timer-text").textContent = formatTime(activeAnalysis.minutes * 60);
+  document.querySelector("#action-timer-status").textContent = `为自己留出 ${activeAnalysis.minutes} 分钟，不必做到完美`;
+  showModalStage(actionStage);
   practiceModal.hidden = false;
   document.body.classList.add("modal-open");
-  document.querySelector("#begin-breathing").focus();
+  document.querySelector("#begin-action").focus();
+}
+
+function openTool(tool, standalone = currentPage === "toolkit") {
+  if (!standalone && activeAnalysis?.saved) {
+    showToast("本次记录已经保存，可以开始一次新的记录");
+    return;
+  }
+  resetPractice();
+  completionMode = standalone ? "standalone" : "record";
+  currentIntervention = toolMeta[tool].label;
+  const stageMap = { breathing: practiceStage, grounding: groundingStage, movement: movementStage, sound: soundStage };
+  showModalStage(stageMap[tool]);
+  practiceModal.hidden = false;
+  document.body.classList.add("modal-open");
 }
 
 function closePractice() {
   if (breathingTimer) window.clearInterval(breathingTimer);
+  if (actionTimer) window.clearInterval(actionTimer);
   breathingTimer = null;
+  actionTimer = null;
+  stopSound();
   practiceModal.hidden = true;
   document.body.classList.remove("modal-open");
-  document.querySelector("#start-practice").focus();
+}
+
+function finishIntervention(skipped = false) {
+  if (breathingTimer) window.clearInterval(breathingTimer);
+  if (actionTimer) window.clearInterval(actionTimer);
+  breathingTimer = null;
+  actionTimer = null;
+  stopSound();
+  if (completionMode === "standalone") {
+    document.querySelector("#change-title").textContent = skipped ? "练习已结束" : "你为自己留出了一点空间";
+    document.querySelector("#change-copy").textContent = skipped
+      ? "你可以随时回来，选择另一种更适合当下的方式。"
+      : `你刚刚完成了“${currentIntervention}”。哪怕只有一点点停顿，也是一种照顾。`;
+    document.querySelector("#view-footprints").hidden = true;
+    document.querySelector("#new-checkin").textContent = "回到工具箱";
+    showModalStage(completeStage);
+    return;
+  }
+  if (!activeAnalysis) return;
+  activeAnalysis.intervention = currentIntervention;
+  activeAnalysis.skipped = skipped;
+  showAfterStage();
 }
 
 function showAfterStage() {
-  if (breathingTimer) window.clearInterval(breathingTimer);
-  breathingTimer = null;
-  practiceStage.hidden = true;
-  afterStage.hidden = false;
-  completeStage.hidden = true;
-  const suggested = Math.max(1, state.intensity - 1);
-  afterIntensity.value = suggested;
-  afterValue.value = suggested;
-  afterIntensity.style.background = `linear-gradient(90deg, var(--primary) 0 ${((suggested - 1) / 9) * 100}%, #deddea ${((suggested - 1) / 9) * 100}% 100%)`;
+  showModalStage(afterStage);
+  const baseline = activeAnalysis?.intensityBefore ?? state.intensity;
+  afterIntensity.value = baseline;
+  afterValue.value = baseline;
+  const percent = ((baseline - 1) / 9) * 100;
+  afterIntensity.style.background = `linear-gradient(90deg, var(--primary) 0 ${percent}%, #deddea ${percent}% 100%)`;
+}
+
+function beginAction() {
+  const button = document.querySelector("#begin-action");
+  const timerText = document.querySelector("#action-timer-text");
+  const status = document.querySelector("#action-timer-status");
+  const progress = document.querySelector("#action-progress");
+  const total = activeAnalysis.minutes * 60;
+  let remaining = total;
+  button.disabled = true;
+  button.textContent = "行动进行中";
+  status.textContent = "只专注眼前这一小步";
+  actionTimer = window.setInterval(() => {
+    remaining -= 1;
+    timerText.textContent = formatTime(Math.max(0, remaining));
+    progress.style.width = `${((total - remaining) / total) * 100}%`;
+    if (remaining <= 0) finishIntervention(false);
+  }, 1000);
 }
 
 function beginBreathing() {
@@ -406,10 +561,8 @@ function beginBreathing() {
   const progress = document.querySelector("#practice-progress");
   let elapsed = 0;
   const total = 60;
-
   button.disabled = true;
   button.textContent = "练习进行中";
-
   const update = () => {
     const position = elapsed % 12;
     let phase = "吸气";
@@ -428,44 +581,149 @@ function beginBreathing() {
     phaseText.textContent = phase;
     countText.textContent = Math.max(1, remaining);
     cycleText.textContent = `第 ${Math.min(5, Math.floor(elapsed / 12) + 1)} / 5 轮`;
-    const secondsLeft = Math.max(0, total - elapsed);
-    timerText.textContent = `00:${String(secondsLeft).padStart(2, "0")}`;
+    timerText.textContent = `00:${String(Math.max(0, total - elapsed)).padStart(2, "0")}`;
     progress.style.width = `${(elapsed / total) * 100}%`;
-    if (elapsed >= total) showAfterStage();
+    if (elapsed >= total) finishIntervention(false);
     elapsed += 1;
   };
-
   update();
   breathingTimer = window.setInterval(update, 1000);
 }
 
-function saveCheckin() {
-  if (!activeAnalysis) return;
-  const after = Number(afterIntensity.value);
-  const record = {
-    ...activeAnalysis,
-    intensityAfter: after,
-    createdAt: new Date().toISOString(),
-  };
-  const existing = getRecords();
-  localStorage.setItem("moodloop_records", JSON.stringify([record, ...existing].slice(0, 30)));
+function renderMovementStep() {
+  const step = movementSteps[movementIndex];
+  document.querySelector("#movement-step").textContent = `${movementIndex + 1} / ${movementSteps.length}`;
+  document.querySelector("#movement-visual").textContent = step.visual;
+  document.querySelector("#movement-title").textContent = step.title;
+  document.querySelector("#movement-copy").textContent = step.copy;
+  document.querySelector("#next-movement").textContent = movementIndex === movementSteps.length - 1 ? "完成身体松动" : "完成，下一步";
+}
 
+async function toggleSound() {
+  if (audioContext) {
+    stopSound();
+    return;
+  }
+  const AudioEngine = window.AudioContext || window.webkitAudioContext;
+  if (!AudioEngine) {
+    showToast("当前浏览器暂不支持本地声景");
+    return;
+  }
+  audioContext = new AudioEngine();
+  const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
+  soundSource = audioContext.createBufferSource();
+  const filter = audioContext.createBiquadFilter();
+  soundGain = audioContext.createGain();
+  soundSource.buffer = buffer;
+  soundSource.loop = true;
+  filter.type = "lowpass";
+  filter.frequency.value = 520;
+  soundGain.gain.value = Number(document.querySelector("#sound-volume").value) / 500;
+  soundSource.connect(filter).connect(soundGain).connect(audioContext.destination);
+  soundSource.start();
+  document.querySelector("#sound-orb").classList.add("playing");
+  document.querySelector("#sound-status").textContent = "正在播放";
+  document.querySelector("#toggle-sound").textContent = "暂停声景";
+}
+
+function saveCheckin() {
+  if (!activeAnalysis || activeAnalysis.saved) {
+    showToast("这次记录已经保存过了");
+    return;
+  }
+  const saveButton = document.querySelector("#save-checkin");
+  saveButton.disabled = true;
+  const after = Number(afterIntensity.value);
+  const record = { ...activeAnalysis, intensityAfter: after, createdAt: new Date().toISOString(), saved: true };
+  try {
+    const existing = getRecords().filter((item) => item.id !== record.id);
+    localStorage.setItem("moodloop_records", JSON.stringify([record, ...existing].slice(0, 30)));
+    localStorage.setItem("moodloop_demo_dismissed", "true");
+  } catch {
+    saveButton.disabled = false;
+    showToast("保存失败，请检查浏览器存储权限");
+    return;
+  }
+  activeAnalysis.saved = true;
+  document.querySelector("#start-practice").disabled = true;
+  document.querySelector("#start-practice").textContent = "本次已完成";
   const change = activeAnalysis.intensityBefore - after;
   document.querySelector("#change-title").textContent = change > 0
     ? `你为自己争取到了 ${change} 分空间`
-    : "谢谢你如实看见此刻";
+    : change < 0 ? "谢谢你如实记录变化" : "谢谢你认真看见此刻";
   document.querySelector("#change-copy").textContent = change > 0
     ? `从 ${activeAnalysis.intensityBefore} 分到 ${after} 分。改变不必很大，这一点点松动也值得被记住。`
-    : `感受暂时没有变轻也没关系。记录它，已经是在认真照顾自己。`;
-  afterStage.hidden = true;
-  completeStage.hidden = false;
+    : change < 0
+      ? `情绪从 ${activeAnalysis.intensityBefore} 分升到 ${after} 分。先不要独自硬撑，可以换一种方式或联系可信任的人。`
+      : `情绪仍是 ${after} 分。没有变化也不是失败，这条真实记录会帮助你找到更适合的方法。`;
+  document.querySelector("#view-footprints").hidden = false;
+  document.querySelector("#new-checkin").textContent = "再记录一次";
+  completionMode = "record";
+  showModalStage(completeStage);
   showToast("这次情绪照顾已保存在当前设备");
 }
 
+function resetCheckinForm() {
+  activeAnalysis = null;
+  state.emotion = "";
+  state.tone = "";
+  state.intensity = 6;
+  state.minutes = 1;
+  document.body.removeAttribute("data-tone");
+  emotionOptions.forEach((option) => option.setAttribute("aria-pressed", "false"));
+  timeOptions.forEach((option, index) => option.setAttribute("aria-pressed", index === 0 ? "true" : "false"));
+  intensityInput.value = 6;
+  journal.value = "";
+  charCount.textContent = "0";
+  formMessage.textContent = "";
+  updateRange();
+}
+
 document.querySelector("#start-practice").addEventListener("click", openPractice);
+document.querySelector("#recommended-tool").addEventListener("click", () => {
+  if (activeAnalysis) openTool(activeAnalysis.recommendedTool, false);
+});
+document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => openTool(button.dataset.tool, true)));
+document.querySelector("#begin-action").addEventListener("click", beginAction);
+document.querySelector("#finish-action").addEventListener("click", () => finishIntervention(false));
 document.querySelector("#begin-breathing").addEventListener("click", beginBreathing);
-document.querySelector("#skip-practice").addEventListener("click", showAfterStage);
+document.querySelector("#skip-practice").addEventListener("click", () => finishIntervention(true));
+document.querySelectorAll("[data-skip-tool]").forEach((button) => button.addEventListener("click", () => finishIntervention(true)));
+document.querySelectorAll(".grounding-list button").forEach((button) => button.addEventListener("click", () => {
+  button.classList.toggle("done");
+  button.querySelector("i").textContent = button.classList.contains("done") ? "已完成 ✓" : "完成";
+  const done = document.querySelectorAll(".grounding-list button.done").length;
+  const finish = document.querySelector("#finish-grounding");
+  finish.disabled = done < 5;
+  finish.textContent = done < 5 ? `还差 ${5 - done} 项` : "完成全部观察";
+}));
+document.querySelector("#finish-grounding").addEventListener("click", () => finishIntervention(false));
+document.querySelector("#next-movement").addEventListener("click", () => {
+  if (movementIndex < movementSteps.length - 1) {
+    movementIndex += 1;
+    renderMovementStep();
+  } else finishIntervention(false);
+});
+document.querySelector("#toggle-sound").addEventListener("click", toggleSound);
+document.querySelector("#finish-sound").addEventListener("click", () => finishIntervention(false));
+document.querySelector("#sound-volume").addEventListener("input", (event) => {
+  if (soundGain) soundGain.gain.value = Number(event.target.value) / 500;
+});
 document.querySelector("#save-checkin").addEventListener("click", saveCheckin);
+document.querySelector("#view-footprints").addEventListener("click", () => {
+  closePractice();
+  showPage("footprints");
+});
+document.querySelector("#new-checkin").addEventListener("click", () => {
+  closePractice();
+  if (completionMode === "standalone") showPage("toolkit");
+  else {
+    resetCheckinForm();
+    showPage("checkin");
+  }
+});
 document.querySelectorAll("[data-close-modal]").forEach((button) => button.addEventListener("click", closePractice));
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !practiceModal.hidden) closePractice();
@@ -478,10 +736,26 @@ afterIntensity.addEventListener("input", () => {
 });
 
 document.querySelectorAll("[data-feedback]").forEach((button) => {
+  button.setAttribute("aria-pressed", "false");
   button.addEventListener("click", () => {
-    document.querySelectorAll("[data-feedback]").forEach((item) => item.classList.remove("selected"));
+    document.querySelectorAll("[data-feedback]").forEach((item) => {
+      item.classList.remove("selected");
+      item.setAttribute("aria-pressed", "false");
+    });
     button.classList.add("selected");
-    button.textContent = button.dataset.feedback === "no" ? "谢谢纠正" : "已记录";
+    button.setAttribute("aria-pressed", "true");
+    if (activeAnalysis) {
+      activeAnalysis.feedback = button.dataset.feedback;
+      if (activeAnalysis.saved) {
+        const records = getRecords();
+        const saved = records.find((record) => record.id === activeAnalysis.id);
+        if (saved) {
+          saved.feedback = activeAnalysis.feedback;
+          localStorage.setItem("moodloop_records", JSON.stringify(records));
+        }
+      }
+    }
+    showToast("已记录你的反馈");
   });
 });
 

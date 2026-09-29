@@ -19,6 +19,10 @@
       <span class="brand-cn">情绪回路</span>
     </a>
     <div class="header-actions">
+      <button id="toolkit-nav" class="header-nav" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8m0-12.8L5.6 18.4"/></svg>
+        关怀工具
+      </button>
       <button id="footprints-nav" class="header-nav" type="button">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
         我的足迹
@@ -136,6 +140,7 @@
           </div>
           <button id="start-practice" class="action-button" type="button">现在开始</button>
         </div>
+        <button id="recommended-tool" class="recommended-tool" type="button"><span>先安顿身体</span><b id="recommended-tool-label">试试一分钟呼吸</b> →</button>
         <div class="feedback-row">
           <span>这面镜子贴近你吗？</span>
           <button type="button" data-feedback="yes">很贴近</button>
@@ -160,7 +165,7 @@
       <div id="demo-data-note" class="demo-data-note">当前展示的是示例洞察；完成一次调节后，将切换为你的真实记录。</div>
       <div class="insight-grid">
         <article class="stat-card"><small>已照顾自己</small><strong><span id="stat-count">0</span><i>次</i></strong><p>每一次停下来都算数</p></article>
-        <article class="stat-card accent-stat"><small>平均缓解</small><strong><span id="stat-relief">0</span><i>分</i></strong><p>调节前后的情绪变化</p></article>
+        <article class="stat-card accent-stat"><small>平均变化</small><strong><span id="stat-relief">0</span><i>分</i></strong><p>正数代表强度下降</p></article>
         <article class="stat-card"><small>最近常见触发</small><strong id="stat-trigger" class="text-stat">—</strong><p>了解规律，不等于定义自己</p></article>
       </div>
       <div class="insight-layout">
@@ -179,13 +184,51 @@
       </article>
     </section>
 
+    <section id="toolkit" class="toolkit-section" hidden>
+      <div class="page-heading">
+        <div>
+          <span class="step-label">关怀工具箱</span>
+          <h2>此刻，哪一种方式更适合你？</h2>
+          <p>不需要把情绪赶走，只选择一种身体愿意尝试的方式。</p>
+        </div>
+        <button id="back-from-toolkit" class="back-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+          返回
+        </button>
+      </div>
+      <div class="tool-grid">
+        <button class="tool-card breathing-tool" type="button" data-tool="breathing">
+          <span class="tool-icon">◌</span><small>1 分钟</small><h3>节律呼吸</h3><p>用 4-2-6 的节奏，让身体从警觉中慢慢退一步。</p><b>开始练习 →</b>
+        </button>
+        <button class="tool-card" type="button" data-tool="grounding">
+          <span class="tool-icon">◎</span><small>2 分钟</small><h3>感官着陆</h3><p>通过 5-4-3-2-1 感官练习，把注意力带回此时此地。</p><b>开始练习 →</b>
+        </button>
+        <button class="tool-card" type="button" data-tool="movement">
+          <span class="tool-icon">↗</span><small>3 分钟</small><h3>身体松动</h3><p>三个低强度动作，释放肩颈和身体里积累的紧绷。</p><b>开始练习 →</b>
+        </button>
+        <button class="tool-card sound-tool" type="button" data-tool="sound">
+          <span class="tool-icon">≋</span><small>随时停止</small><h3>舒缓声景</h3><p>设备本地生成柔和声景，不加载音乐，也没有版权负担。</p><b>开始聆听 →</b>
+        </button>
+      </div>
+    </section>
+
     <p class="medical-note">MoodLoop 提供自我关怀支持，不提供心理诊断或医疗建议。若你正处于危险中，请立即联系身边可信任的人或当地紧急援助。</p>
   </main>
 
-  <div id="practice-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="practice-title" hidden>
+  <div id="practice-modal" class="modal" role="dialog" aria-modal="true" aria-label="自我关怀练习" hidden>
     <div class="modal-backdrop" data-close-modal></div>
     <section class="practice-panel">
       <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+
+      <div id="action-stage" class="action-stage" hidden>
+        <span class="step-label">你的 1% 行动</span>
+        <h2 id="modal-action-title">完成一个最小行动</h2>
+        <p id="modal-action-description"></p>
+        <div class="action-timer"><strong id="action-timer-text">01:00</strong><span id="action-timer-status">准备好后开始，不必做到完美</span></div>
+        <div class="practice-progress"><i id="action-progress"></i></div>
+        <button id="begin-action" class="primary-button" type="button">开始行动计时</button>
+        <button id="finish-action" class="skip-button" type="button">我完成了，记录变化</button>
+      </div>
 
       <div id="practice-stage" class="practice-stage">
         <span class="step-label">给自己一分钟</span>
@@ -209,6 +252,40 @@
         <button id="skip-practice" class="skip-button" type="button">跳过练习，记录变化</button>
       </div>
 
+      <div id="grounding-stage" class="grounding-stage" hidden>
+        <span class="step-label">5-4-3-2-1 感官着陆</span>
+        <h2>把注意力带回此刻</h2>
+        <p>依次完成下面的小观察，答案不用告诉任何人。</p>
+        <div class="grounding-list">
+          <button type="button"><b>5</b><span>找出五样你能看见的东西</span><i>完成</i></button>
+          <button type="button"><b>4</b><span>感受四样你能触碰的东西</span><i>完成</i></button>
+          <button type="button"><b>3</b><span>留意三种你能听见的声音</span><i>完成</i></button>
+          <button type="button"><b>2</b><span>发现两种你能闻到的气味</span><i>完成</i></button>
+          <button type="button"><b>1</b><span>注意一种口腔里的味道</span><i>完成</i></button>
+        </div>
+        <button id="finish-grounding" class="primary-button" type="button" disabled>完成全部观察</button>
+        <button class="skip-button" type="button" data-skip-tool>跳过练习，记录变化</button>
+      </div>
+
+      <div id="movement-stage" class="movement-stage" hidden>
+        <span class="step-label">3 分钟身体松动</span>
+        <h2>让紧绷有地方离开</h2>
+        <p>动作保持轻柔；如果感到疼痛，请立即停止。</p>
+        <div class="movement-card"><span id="movement-step">1 / 3</span><div id="movement-visual">↟</div><h3 id="movement-title">耸肩，再慢慢放下</h3><p id="movement-copy">吸气时耸起肩膀，呼气时彻底放松，重复三次。</p></div>
+        <button id="next-movement" class="primary-button" type="button">完成，下一步</button>
+        <button class="skip-button" type="button" data-skip-tool>跳过练习，记录变化</button>
+      </div>
+
+      <div id="sound-stage" class="sound-stage" hidden>
+        <span class="step-label">本地生成 · 无版权声景</span>
+        <h2>给大脑一点柔和背景</h2>
+        <p>声音只在当前设备生成，不会录音或上传任何内容。</p>
+        <div id="sound-orb" class="sound-orb"><i></i><i></i><i></i><span id="sound-status">点击播放</span></div>
+        <label class="volume-control">音量 <input id="sound-volume" type="range" min="0" max="100" value="22" /></label>
+        <button id="toggle-sound" class="primary-button" type="button">播放舒缓声景</button>
+        <button id="finish-sound" class="skip-button" type="button">结束聆听，记录变化</button>
+      </div>
+
       <div id="after-stage" class="after-stage" hidden>
         <span class="step-label">03 · 感受变化</span>
         <h2>现在，比刚才轻了一点吗？</h2>
@@ -224,7 +301,10 @@
         <span class="step-label">已为你保存</span>
         <h2 id="change-title">你为自己争取到了一点空间</h2>
         <p id="change-copy"></p>
-        <button class="secondary-button" type="button" data-close-modal>回到此刻</button>
+        <div class="complete-actions">
+          <button id="view-footprints" class="primary-button" type="button">查看我的足迹</button>
+          <button id="new-checkin" class="secondary-button" type="button">再记录一次</button>
+        </div>
       </div>
     </section>
   </div>
