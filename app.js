@@ -32,8 +32,8 @@ let activeAnalysis = null;
 let breathingTimer = null;
 let actionTimer = null;
 let audioContext = null;
-let soundSource = null;
 let soundGain = null;
+let soundNodes = [];
 let currentIntervention = "";
 let currentPage = "checkin";
 let returnPage = "checkin";
@@ -420,10 +420,11 @@ function showModalStage(stage) {
 }
 
 function stopSound() {
-  if (soundSource) {
-    try { soundSource.stop(); } catch {}
-    soundSource = null;
-  }
+  soundNodes.forEach((node) => {
+    try { node.stop(); } catch {}
+    try { node.disconnect(); } catch {}
+  });
+  soundNodes = [];
   if (audioContext) {
     audioContext.close().catch(() => {});
     audioContext = null;
@@ -609,23 +610,56 @@ async function toggleSound() {
     showToast("当前浏览器暂不支持本地声景");
     return;
   }
-  audioContext = new AudioEngine();
-  const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
-  soundSource = audioContext.createBufferSource();
-  const filter = audioContext.createBiquadFilter();
-  soundGain = audioContext.createGain();
-  soundSource.buffer = buffer;
-  soundSource.loop = true;
-  filter.type = "lowpass";
-  filter.frequency.value = 520;
-  soundGain.gain.value = Number(document.querySelector("#sound-volume").value) / 500;
-  soundSource.connect(filter).connect(soundGain).connect(audioContext.destination);
-  soundSource.start();
-  document.querySelector("#sound-orb").classList.add("playing");
-  document.querySelector("#sound-status").textContent = "正在播放";
-  document.querySelector("#toggle-sound").textContent = "暂停声景";
+  try {
+    audioContext = new AudioEngine();
+    await audioContext.resume();
+
+    soundGain = audioContext.createGain();
+    const volume = Number(document.querySelector("#sound-volume").value) / 100;
+    soundGain.gain.value = volume * 0.18;
+    soundGain.connect(audioContext.destination);
+
+    const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 3, audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let index = 0; index < data.length; index += 1) data[index] = Math.random() * 2 - 1;
+    const noise = audioContext.createBufferSource();
+    const filter = audioContext.createBiquadFilter();
+    const noiseLevel = audioContext.createGain();
+    noise.buffer = buffer;
+    noise.loop = true;
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(680, audioContext.currentTime);
+    noiseLevel.gain.value = 0.45;
+    noise.connect(filter).connect(noiseLevel).connect(soundGain);
+
+    const lowTone = audioContext.createOscillator();
+    const lowToneGain = audioContext.createGain();
+    lowTone.type = "sine";
+    lowTone.frequency.setValueAtTime(174.6, audioContext.currentTime);
+    lowToneGain.gain.value = 0.035;
+    lowTone.connect(lowToneGain).connect(soundGain);
+
+    const highTone = audioContext.createOscillator();
+    const highToneGain = audioContext.createGain();
+    highTone.type = "sine";
+    highTone.frequency.setValueAtTime(261.6, audioContext.currentTime);
+    highToneGain.gain.value = 0.018;
+    highTone.connect(highToneGain).connect(soundGain);
+
+    noise.start();
+    lowTone.start();
+    highTone.start();
+    soundNodes = [noise, lowTone, highTone];
+    await audioContext.resume();
+    if (audioContext.state !== "running") throw new Error("audio context suspended");
+
+    document.querySelector("#sound-orb").classList.add("playing");
+    document.querySelector("#sound-status").textContent = "正在播放 · 可调音量";
+    document.querySelector("#toggle-sound").textContent = "暂停声景";
+  } catch {
+    stopSound();
+    showToast("浏览器阻止了声音，请再次点击播放并确认设备未静音");
+  }
 }
 
 function saveCheckin() {
@@ -709,7 +743,9 @@ document.querySelector("#next-movement").addEventListener("click", () => {
 document.querySelector("#toggle-sound").addEventListener("click", toggleSound);
 document.querySelector("#finish-sound").addEventListener("click", () => finishIntervention(false));
 document.querySelector("#sound-volume").addEventListener("input", (event) => {
-  if (soundGain) soundGain.gain.value = Number(event.target.value) / 500;
+  if (soundGain && audioContext) {
+    soundGain.gain.setTargetAtTime((Number(event.target.value) / 100) * 0.18, audioContext.currentTime, 0.03);
+  }
 });
 document.querySelector("#save-checkin").addEventListener("click", saveCheckin);
 document.querySelector("#view-footprints").addEventListener("click", () => {
