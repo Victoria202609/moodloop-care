@@ -193,6 +193,8 @@ blockquote::before { content: "“"; color: #9b91df; font-family: Georgia, serif
 .practice-meta { display: flex; justify-content: space-between; margin: 8px 1px 18px; color: #9695a4; font-size: 10px; }
 .quiet-button { margin-top: 12px; border: 0; background: transparent; color: #8d88b2; font-size: 11px; cursor: pointer; }
 .quiet-button:hover { text-decoration: underline; }
+.skip-button { width: 100%; min-height: 42px; margin-top: 10px; border: 1px solid #dcd8ef; border-radius: 13px; color: #716b9b; background: rgba(255,255,255,.72); cursor: pointer; font-size: 11px; font-weight: 600; transition: border-color 150ms ease, background 150ms ease; }
+.skip-button:hover { border-color: #aaa2d9; background: white; }
 .after-stage { padding-top: 44px; }
 .after-score { display: flex; justify-content: center; align-items: flex-end; gap: 4px; margin: 54px 0 32px; }
 .after-score output { font-size: 72px; line-height: .8; color: var(--primary); font-weight: 750; letter-spacing: -.07em; }
