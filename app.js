@@ -16,6 +16,7 @@ const analyzeButton = document.querySelector("#analyze-button");
 const resultSection = document.querySelector("#result");
 const heroSection = document.querySelector(".hero");
 const checkinCard = document.querySelector(".checkin-card");
+const careSection = document.querySelector("#care");
 const footprintsSection = document.querySelector("#footprints");
 const toolkitSection = document.querySelector("#toolkit");
 const practiceModal = document.querySelector("#practice-modal");
@@ -43,10 +44,10 @@ let clearConfirmTimer = null;
 
 const riskWords = ["不想活", "想死", "自杀", "自残", "伤害自己", "结束生命", "活不下去"];
 const toolMeta = {
-  breathing: { label: "节律呼吸", short: "试试一分钟呼吸" },
-  grounding: { label: "感官着陆", short: "试试感官着陆" },
-  movement: { label: "身体松动", short: "试试身体松动" },
-  sound: { label: "舒缓声景", short: "听一会舒缓声景" },
+  breathing: { label: "节律呼吸", short: "试试一分钟呼吸", description: "跟随 4-2-6 的呼吸节奏，让身体从警觉中慢慢退一步。" },
+  grounding: { label: "感官着陆", short: "试试感官着陆", description: "用 5-4-3-2-1 感官观察，把注意力带回安全的此时此地。" },
+  movement: { label: "身体松动", short: "试试身体松动", description: "通过三个轻柔动作，释放肩颈和身体里积累的紧绷。" },
+  sound: { label: "舒缓声景", short: "听一会舒缓声景", description: "听一段设备本地生成的柔和声景，让思绪获得一点背景空间。" },
 };
 const movementSteps = [
   { visual: "↟", title: "耸肩，再慢慢放下", copy: "吸气时耸起肩膀，呼气时彻底放松，重复三次。" },
@@ -280,16 +281,34 @@ document.querySelector("#back-to-checkin").addEventListener("click", () => {
 });
 
 function showPage(page) {
+  if (page === "care" && !activeAnalysis) page = "checkin";
   if ((page === "footprints" || page === "toolkit") && page !== currentPage) returnPage = currentPage;
   const isCheckin = page === "checkin";
   heroSection.hidden = !isCheckin;
   checkinCard.hidden = !isCheckin;
   resultSection.hidden = page !== "result";
+  careSection.hidden = page !== "care";
   footprintsSection.hidden = page !== "footprints";
   toolkitSection.hidden = page !== "toolkit";
   currentPage = page;
+  if (page === "care") renderCarePlan();
   if (page === "footprints") renderFootprints();
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderCarePlan() {
+  if (!activeAnalysis) return;
+  const meta = toolMeta[activeAnalysis.recommendedTool];
+  document.querySelector("#care-emotion").textContent = activeAnalysis.emotion;
+  document.querySelector("#care-intensity").textContent = `${activeAnalysis.intensityBefore} / 10`;
+  document.querySelector("#care-summary-copy").textContent = `“${activeAnalysis.trigger}”可能正在消耗你。先处理最靠近的一小步，再照顾身体。`;
+  document.querySelector("#care-action-time").textContent = `${activeAnalysis.minutes} 分钟`;
+  document.querySelector("#care-action-title").textContent = activeAnalysis.actionTitle;
+  document.querySelector("#care-action-description").textContent = document.querySelector("#action-description").textContent;
+  document.querySelector("#care-tool-name").textContent = meta.label;
+  document.querySelector("#care-tool-description").textContent = meta.description;
+  document.querySelector("#care-action-button").disabled = activeAnalysis.saved;
+  document.querySelector("#care-tool-button").disabled = activeAnalysis.saved;
 }
 
 function getRecords() {
@@ -353,8 +372,11 @@ function renderFootprints() {
 
 document.querySelector("#footprints-nav").addEventListener("click", () => showPage("footprints"));
 document.querySelector("#toolkit-nav").addEventListener("click", () => showPage("toolkit"));
+document.querySelector("#continue-to-care").addEventListener("click", () => showPage("care"));
+document.querySelector("#back-from-care").addEventListener("click", () => showPage("result"));
 document.querySelector("#back-from-footprints").addEventListener("click", () => showPage(returnPage === "footprints" ? "checkin" : returnPage));
 document.querySelector("#back-from-toolkit").addEventListener("click", () => showPage(returnPage === "toolkit" ? "checkin" : returnPage));
+document.querySelectorAll("[data-go-checkin]").forEach((button) => button.addEventListener("click", () => showPage("checkin")));
 document.querySelector(".brand").addEventListener("click", (event) => {
   event.preventDefault();
   showPage("checkin");
@@ -715,10 +737,15 @@ function resetCheckinForm() {
   updateRange();
 }
 
-document.querySelector("#start-practice").addEventListener("click", openPractice);
+document.querySelector("#start-practice").addEventListener("click", () => showPage("care"));
 document.querySelector("#recommended-tool").addEventListener("click", () => {
   if (activeAnalysis) openTool(activeAnalysis.recommendedTool, false);
 });
+document.querySelector("#care-action-button").addEventListener("click", openPractice);
+document.querySelector("#care-tool-button").addEventListener("click", () => {
+  if (activeAnalysis) openTool(activeAnalysis.recommendedTool, false);
+});
+document.querySelectorAll("[data-care-tool]").forEach((button) => button.addEventListener("click", () => openTool(button.dataset.careTool, false)));
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => openTool(button.dataset.tool, true)));
 document.querySelector("#begin-action").addEventListener("click", beginAction);
 document.querySelector("#finish-action").addEventListener("click", () => finishIntervention(false));

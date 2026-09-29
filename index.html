@@ -138,7 +138,7 @@
             <h3 id="action-title"></h3>
             <p id="action-description"></p>
           </div>
-          <button id="start-practice" class="action-button" type="button">现在开始</button>
+          <button id="start-practice" class="action-button" type="button">查看方案</button>
         </div>
         <button id="recommended-tool" class="recommended-tool" type="button"><span>先安顿身体</span><b id="recommended-tool-label">试试一分钟呼吸</b> →</button>
         <div class="feedback-row">
@@ -147,7 +147,65 @@
           <button type="button" data-feedback="partly">有一点</button>
           <button type="button" data-feedback="no">不太像</button>
         </div>
+        <button id="continue-to-care" class="primary-button continue-button" type="button">下一步：开始我的舒缓方案 →</button>
       </div>
+    </section>
+
+    <section id="care" class="care-section" hidden>
+      <div class="page-heading">
+        <div>
+          <span class="step-label">03 · 舒缓情绪</span>
+          <h2>现在，我们一起让这一刻轻一点</h2>
+          <p>你的方案分为两步：先让问题变小，再让身体慢下来。</p>
+        </div>
+        <div class="page-actions">
+          <button id="back-from-care" class="back-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+            返回分析
+          </button>
+          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+        </div>
+      </div>
+
+      <div class="care-summary">
+        <div><span id="care-emotion">焦虑</span><b id="care-intensity">8 / 10</b></div>
+        <p id="care-summary-copy">先处理最靠近你的这一小步，不要求自己一次解决全部。</p>
+      </div>
+
+      <div class="care-path">
+        <article class="care-step primary-care-step">
+          <div class="care-step-number">1</div>
+          <div class="care-step-copy">
+            <small>先让问题小一点 · <span id="care-action-time">1 分钟</span></small>
+            <h3 id="care-action-title">写下唯一的下一步</h3>
+            <p id="care-action-description"></p>
+          </div>
+          <button id="care-action-button" class="primary-button" type="button">开始 1% 行动</button>
+        </article>
+
+        <div class="care-connector"><span></span><b>然后</b><span></span></div>
+
+        <article class="care-step body-care-step">
+          <div class="care-step-number">2</div>
+          <div class="care-step-copy">
+            <small>再让身体慢下来 · 推荐</small>
+            <h3 id="care-tool-name">节律呼吸</h3>
+            <p id="care-tool-description">跟随呼吸节奏，让身体从警觉中慢慢退一步。</p>
+          </div>
+          <button id="care-tool-button" class="primary-button" type="button">开始推荐练习</button>
+        </article>
+      </div>
+
+      <div class="care-alternatives">
+        <div class="section-title"><div><small>不想做推荐的方式？</small><h3>换一种更适合当下的练习</h3></div></div>
+        <div class="care-tool-row">
+          <button type="button" data-care-tool="breathing"><span>◌</span>节律呼吸</button>
+          <button type="button" data-care-tool="grounding"><span>◎</span>感官着陆</button>
+          <button type="button" data-care-tool="movement"><span>↗</span>身体松动</button>
+          <button type="button" data-care-tool="sound"><span>≋</span>舒缓声景</button>
+        </div>
+      </div>
+      <p class="care-hint">完成任意一种方式后，你可以记录情绪变化；无论是否变轻，都是真实而有价值的数据。</p>
     </section>
 
     <section id="footprints" class="footprints-section" hidden>
@@ -157,10 +215,13 @@
           <h2>你正在慢慢读懂自己</h2>
           <p>不是为了给情绪打分，而是看见什么真正对你有帮助。</p>
         </div>
-        <button id="back-from-footprints" class="back-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
-          回到此刻
-        </button>
+        <div class="page-actions">
+          <button id="back-from-footprints" class="back-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+            返回上一页
+          </button>
+          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+        </div>
       </div>
       <div id="demo-data-note" class="demo-data-note">当前展示的是示例洞察；完成一次调节后，将切换为你的真实记录。</div>
       <div class="insight-grid">
@@ -191,10 +252,13 @@
           <h2>此刻，哪一种方式更适合你？</h2>
           <p>不需要把情绪赶走，只选择一种身体愿意尝试的方式。</p>
         </div>
-        <button id="back-from-toolkit" class="back-button" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
-          返回
-        </button>
+        <div class="page-actions">
+          <button id="back-from-toolkit" class="back-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m11 5-7 7 7 7M4 12h16"/></svg>
+            返回上一页
+          </button>
+          <button class="text-button" type="button" data-go-checkin>回到记录</button>
+        </div>
       </div>
       <div class="tool-grid">
         <button class="tool-card breathing-tool" type="button" data-tool="breathing">
