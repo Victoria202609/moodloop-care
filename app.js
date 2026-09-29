@@ -14,6 +14,8 @@ const charCount = document.querySelector("#char-count");
 const formMessage = document.querySelector("#form-message");
 const analyzeButton = document.querySelector("#analyze-button");
 const resultSection = document.querySelector("#result");
+const heroSection = document.querySelector(".hero");
+const checkinCard = document.querySelector(".checkin-card");
 const practiceModal = document.querySelector("#practice-modal");
 const practiceStage = document.querySelector("#practice-stage");
 const afterStage = document.querySelector("#after-stage");
@@ -215,11 +217,19 @@ function renderAnalysis() {
   document.querySelector("#action-title").textContent = action[0];
   document.querySelector("#action-description").textContent = action[1];
 
+  heroSection.hidden = true;
+  checkinCard.hidden = true;
   resultSection.hidden = false;
-  requestAnimationFrame(() => resultSection.scrollIntoView({ behavior: "smooth", block: "start" }));
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 analyzeButton.addEventListener("click", renderAnalysis);
+document.querySelector("#back-to-checkin").addEventListener("click", () => {
+  resultSection.hidden = true;
+  heroSection.hidden = false;
+  checkinCard.hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
 
 function showToast(message) {
   const toast = document.querySelector("#toast");
