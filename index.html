@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f7fb" />
+  <meta name="description" content="MoodLoop 情绪回路：用 30 秒看见情绪，找到让当下好 1% 的行动。" />
+  <title>MoodLoop · 情绪回路</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="site-header shell">
+    <a class="brand" href="#top" aria-label="MoodLoop 首页">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>MoodLoop</span>
+      <span class="brand-cn">情绪回路</span>
+    </a>
+    <div class="privacy-pill" title="记录只保存在当前浏览器">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.7 2.9 8.1 7 10 4.1-1.9 7-5.3 7-10V6l-7-3Zm0 3.1 4 1.7V11c0 3.1-1.7 5.5-4 7-2.3-1.5-4-3.9-4-7V7.8l4-1.7Z"/></svg>
+      本地隐私模式
+    </div>
+  </header>
+
+  <main id="top" class="shell">
+    <section class="hero">
+      <div class="eyebrow"><span></span> 给此刻一个被看见的机会</div>
+      <h1>此刻，你的内心<br />是什么<span>天气</span>？</h1>
+      <p>不用组织语言，也不用马上振作。花 30 秒记下感受，我们一起找到让当下好 1% 的行动。</p>
+    </section>
+
+    <section class="checkin-card" aria-labelledby="checkin-title">
+      <div class="card-heading">
+        <div>
+          <span class="step-label">01 · 记录此刻</span>
+          <h2 id="checkin-title">先选一个最接近的感受</h2>
+        </div>
+        <span class="time-hint">约 30 秒</span>
+      </div>
+
+      <div class="emotion-grid" role="radiogroup" aria-label="选择情绪">
+        <button class="emotion-option" type="button" data-emotion="开心" data-tone="joy" aria-pressed="false">
+          <span class="emotion-icon">☀</span><span>开心</span><small>轻盈、有能量</small>
+        </button>
+        <button class="emotion-option" type="button" data-emotion="平静" data-tone="calm" aria-pressed="false">
+          <span class="emotion-icon">◌</span><span>平静</span><small>稳定、放松</small>
+        </button>
+        <button class="emotion-option" type="button" data-emotion="焦虑" data-tone="anxious" aria-pressed="false">
+          <span class="emotion-icon">≋</span><span>焦虑</span><small>紧张、不确定</small>
+        </button>
+        <button class="emotion-option" type="button" data-emotion="低落" data-tone="sad" aria-pressed="false">
+          <span class="emotion-icon">☂</span><span>低落</span><small>沉重、没力气</small>
+        </button>
+        <button class="emotion-option" type="button" data-emotion="愤怒" data-tone="angry" aria-pressed="false">
+          <span class="emotion-icon">⌁</span><span>愤怒</span><small>受挫、不公平</small>
+        </button>
+        <button class="emotion-option" type="button" data-emotion="疲惫" data-tone="tired" aria-pressed="false">
+          <span class="emotion-icon">☾</span><span>疲惫</span><small>耗尽、想休息</small>
+        </button>
+      </div>
+
+      <div class="form-row intensity-row">
+        <div class="field-heading">
+          <label for="intensity">这种感受有多强烈？</label>
+          <output id="intensity-value" for="intensity">6</output>
+        </div>
+        <input id="intensity" type="range" min="1" max="10" value="6" />
+        <div class="range-labels"><span>只是掠过</span><span>非常强烈</span></div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-heading text-heading">
+          <label for="journal">刚刚发生了什么？</label>
+          <button id="example-button" class="text-button" type="button">不知道写什么？试试示例</button>
+        </div>
+        <div class="textarea-wrap">
+          <textarea id="journal" maxlength="240" rows="4" placeholder="比如：明天要汇报，但方案还没准备好，我担心做不好……"></textarea>
+          <span class="char-count"><b id="char-count">0</b>/240</span>
+        </div>
+      </div>
+
+      <div class="form-row compact-row">
+        <div class="field-heading"><span class="field-label">现在愿意留给自己多久？</span></div>
+        <div class="time-options" role="radiogroup" aria-label="选择可用时间">
+          <button type="button" data-minutes="1" aria-pressed="true">1 分钟</button>
+          <button type="button" data-minutes="3" aria-pressed="false">3 分钟</button>
+          <button type="button" data-minutes="5" aria-pressed="false">5 分钟</button>
+        </div>
+      </div>
+
+      <div id="form-message" class="form-message" role="alert" aria-live="polite"></div>
+      <button id="analyze-button" class="primary-button" type="button">
+        <span>帮我梳理一下</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 5 7 7-7 7M4 12h15"/></svg>
+      </button>
+    </section>
+
+    <section id="result" class="result-section" aria-live="polite" hidden>
+      <div class="result-intro">
+        <span class="step-label">02 · 看见情绪</span>
+        <p>这不是诊断，只是一面帮助你靠近自己的镜子。</p>
+      </div>
+      <div class="mirror-card">
+        <div class="mirror-topline">
+          <span id="result-badge" class="result-badge">焦虑 · 6/10</span>
+          <span>本地智能分析</span>
+        </div>
+        <blockquote id="compassion-text"></blockquote>
+        <div class="emotion-chain" aria-label="情绪分析链路">
+          <div><small>发生的事情</small><strong id="event-text"></strong></div>
+          <span class="chain-arrow">→</span>
+          <div><small>可能的触发</small><strong id="trigger-text"></strong></div>
+          <span class="chain-arrow">→</span>
+          <div><small>背后的需要</small><strong id="need-text"></strong></div>
+        </div>
+        <div class="action-prescription">
+          <div class="action-number">1%</div>
+          <div class="action-copy">
+            <small>你的最小行动处方 · <span id="action-time">1 分钟</span></small>
+            <h3 id="action-title"></h3>
+            <p id="action-description"></p>
+          </div>
+          <button id="start-practice" class="action-button" type="button">现在开始</button>
+        </div>
+        <div class="feedback-row">
+          <span>这面镜子贴近你吗？</span>
+          <button type="button" data-feedback="yes">很贴近</button>
+          <button type="button" data-feedback="partly">有一点</button>
+          <button type="button" data-feedback="no">不太像</button>
+        </div>
+      </div>
+    </section>
+
+    <p class="medical-note">MoodLoop 提供自我关怀支持，不提供心理诊断或医疗建议。若你正处于危险中，请立即联系身边可信任的人或当地紧急援助。</p>
+  </main>
+
+  <div id="practice-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="practice-title" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="practice-panel">
+      <button class="modal-close" type="button" data-close-modal aria-label="关闭">×</button>
+
+      <div id="practice-stage" class="practice-stage">
+        <span class="step-label">给自己一分钟</span>
+        <h2 id="practice-title">先把呼吸放慢一点</h2>
+        <p>无需改变任何感受，只需要跟着圆环呼吸。</p>
+
+        <div class="breathing-space">
+          <div class="breathing-halo"></div>
+          <div id="breathing-orb" class="breathing-orb">
+            <strong id="breathing-phase">准备</strong>
+            <span id="breathing-count">3</span>
+          </div>
+        </div>
+
+        <div class="practice-progress"><i id="practice-progress"></i></div>
+        <div class="practice-meta">
+          <span id="cycle-text">准备开始</span>
+          <span id="timer-text">01:00</span>
+        </div>
+        <button id="begin-breathing" class="primary-button" type="button">开始呼吸练习</button>
+        <button id="skip-practice" class="quiet-button" type="button">我已准备好记录变化</button>
+      </div>
+
+      <div id="after-stage" class="after-stage" hidden>
+        <span class="step-label">03 · 感受变化</span>
+        <h2>现在，比刚才轻了一点吗？</h2>
+        <p>没有变化也没关系，如实记录就是在了解自己。</p>
+        <div class="after-score"><output id="after-value">5</output><span>/ 10</span></div>
+        <input id="after-intensity" type="range" min="1" max="10" value="5" />
+        <div class="range-labels"><span>轻了很多</span><span>依然强烈</span></div>
+        <button id="save-checkin" class="primary-button" type="button">保存这次照顾</button>
+      </div>
+
+      <div id="complete-stage" class="complete-stage" hidden>
+        <div class="complete-mark">✓</div>
+        <span class="step-label">已为你保存</span>
+        <h2 id="change-title">你为自己争取到了一点空间</h2>
+        <p id="change-copy"></p>
+        <button class="secondary-button" type="button" data-close-modal>回到此刻</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
